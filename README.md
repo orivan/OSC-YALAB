@@ -76,6 +76,46 @@
 ### 3.5. 依赖注入 (Dependency Injection)
 -   所有组件的初始化和依赖关系，都在 `internal/server` 和 `cmd/{project-name}/wire.go` 中通过 `wire` 工具进行管理。
 
+### 3.6. 注释与文档规范 (Comments & Documentation)
+为了生成清晰的官方文档 (`godoc`) 并为 AI 助手提供准确的上下文，所有代码注释必须遵循以下规范：
+
+-   **核心原则**: 所有公开的（首字母大写）包、类型、函数、方法和常量都**必须**有符合 `godoc` 规范的注释。
+-   **格式要求**: 注释必须紧贴在被注释对象的声明之前，中间不能有空行。
+-   **函数/方法注释**:
+    -   必须以被注释的函数或方法名开头。
+    -   第一句话应该是一个完整的句子，简明扼要地概括其功能，以句号结尾。
+    -   如果需要更详细的说明、参数解释、背景信息或使用示例，可以在第一个句子后空一行，然后添加更多段落。
+
+-   **示例**:
+
+    **正确的注释风格:**
+    ```go
+    // UserRepo defines the data access methods for a User.
+    // It is responsible for all database and cache operations related to users.
+    type UserRepo interface {
+        // CreateUser creates a new user in the database.
+        // It returns the ID of the newly created user or an error if the operation fails.
+        CreateUser(ctx context.Context, u *biz.User) (int64, error)
+    }
+    ```
+
+    **错误的注释风格:**
+    ```go
+    // a function to create a user
+    func CreateUser(ctx context.Context, u *biz.User) (int64, error) {
+        // ...
+    }
+    ```
+    *(错误原因：没有以函数名 `CreateUser` 开头，且首字母小写)*
+
+-   **包注释**: 每个包（每个目录）都应该有一个 `doc.go` 文件或者在其中一个 Go 文件里包含包注释，用以说明整个包的功能。
+
+    ```go
+    // Package data handles all data access logic for the application,
+    // including database operations and cache interactions.
+    package data
+    ```
+
 ---
 
 ## 4. 如何开始 (Getting Started)

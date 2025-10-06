@@ -4,20 +4,23 @@
 
 **OSC-YALAB** 是一个纯粹的、实验性的后端项目。
 
-本项目的核心目标是：**通过最简单、最直接的实现，来验证和学习一套现代化的 Go 微服务技术栈和相关的数据架构模式。**
+本项目的核心目标是：**通过最简单、最直接的实现，来验证和学习一套现代化的、融合了数据处理与AI能力的后端技术栈。**
 
-我们不追求复杂的业务逻辑，而是专注于以下两个核心领域的验证：
+我们不追求复杂的业务逻辑，而是专注于以下三个核心领域的验证：
 
 1.  **同步服务架构**: 基于 Kratos 框架，构建提供 gRPC/HTTP 接口的同步服务，并实践经典的旁路缓存模式。
-2.  **异步数据流架构**: 基于 CDC (Change Data Capture) 和 Flink，构建事件驱动的、异步的数据处理管道，用于实现更高级的缓存一致性策略和数据同步。
+2.  **异步数据流架构**: 基于 CDC (Change Data Capture) 和 Flink，构建事件驱动的、异步的数据处理管道，用于实现高级的缓存一致性策略和数据同步。
+3.  **RAG 架构整合**: 引入 Elasticsearch 和大语言模型，构建一个完整的检索增强生成 (Retrieval-Augmented Generation) 查询链路，验证 Go 服务与 Python AI 服务之间的协作模式。
 
-本项目是一个用于快速原型设计和技术探索的“实验室”，旨在对比和理解不同架构模式的优劣。
+本项目是一个用于快速原型设计和技术探索的“实验室”，旨在对比和理解不同架构模式的优劣，并为“雅典娜之盾”项目奠定坚实的技术基础。
 
 ---
 
 ## 2. 核心技术栈 (Core Technology Stack)
 
 本项目将严格围绕以下技术选型进行构建。所有代码生成和开发决策都必须基于此技术栈。
+
+### 2.1. 微服务与数据处理
 
 | 类别 | 技术/库 | 版本/说明 |
 | :--- | :--- | :--- |
@@ -37,11 +40,21 @@
 | **测试** | `stretchr/testify` | 断言和 Mock 工具 |
 | **代码风格** | `goimports` | 格式化与包管理 |
 
+### 2.2. AI 与搜索
+
+| 类别 | 技术/库 | 版本/说明 |
+| :--- | :--- | :--- |
+| **搜索引擎** | **ElasticSearch** | 用于全文搜索和向量检索 |
+| **AI 服务运行时** | Python | >= 3.10，用于运行 AI 模型和 RAG 逻辑 |
+| **AI 框架** | LangChain / LlamaIndex / DSPy | (待定) 用于指令与提示词工程 |
+| **向量化模型** | Qwen-Embedding (`Qwen-Embedding-0.6B`) | 将文本转换为向量，用于相似度搜索 |
+| **大语言模型** | Qwen2.5-7B-Instruct | 根据检索到的上下文生成最终答案 |
+
 ---
 
 ## 3. 架构与开发规范 (Architecture & Development Guidelines)
 
-本项目将同时探索并验证以下两种核心数据处理模式。
+本项目将同时探索并验证以下三种核心数据处理模式。
 
 ### 3.1. Kratos 标准项目结构
 -   严格遵循 `kratos new` 命令生成的标准项目布局。
@@ -69,14 +82,35 @@
                                     +--(DB Change)--> [Debezium] --(Event)--> [Kafka] --(Stream)--> [Flink Job] --(API Call)--> [Invalidate Memcached]
     ```
 
-### 3.4. API 定义与错误处理
+### 3.4. 模式三：RAG 数据流架构 (RAG Data Flow Architecture)
+这是系统的“读路径”核心，整合了搜索与 AI 生成能力，完全对应我们设计的“查询与生成”流程。
+-   **工作流**:
+    1.  **用户查询**: `Kratos 服务`接收来自用户的查询请求。
+    2.  **向量检索**: `Kratos 服务`作为总调度，调用 `Python AI 服务`的接口，传递用户问题。`Python AI 服务`将问题向量化，并查询 `ElasticSearch` 获取最相关的文档 ID 列表。
+    3.  **上下文组装**: `Kratos 服务`接收到文档 ID 列表后，从 `gocache` 或 `PostgreSQL` 中获取完整的文档内容，组装成 LLM 需要的上下文 (Context)。
+    4.  **答案生成**: `Kratos 服务`再次调用 `Python AI 服务`，这次将**原始问题**和**组装好的上下文**一同传递过去。`Python AI 服务`内部构建最终的 Prompt，并调用 `Qwen2.5-7B-Instruct` 大语言模型。
+    5.  **返回结果**: `Kratos 服务`获取到 AI 生成的最终答案，返回给用户。
+-   **优势**: 明确了 Go 服务和 Python 服务的职责边界。Go (Kratos) 负责业务流程编排、高可用控制（熔断、超时）和通用数据访问；Python 负责所有与 AI 模型相关的重计算和专业逻辑。
+-   **可视化流程**:
+    ```
+    [User] -> [Kratos App] --(1. Query)--> [Python AI Service] --(2. Vector Search)--> [ElasticSearch]
+                                                                  ^                                       |
+                                                                  | (5. Final Answer)                       | (2a. Return IDs)
+                                                                  |                                       v
+    [User] <-(6. Return)-- [Kratos App] <--(4a. Generate)-- [Python AI Service] <-(4. Call LLM)-- [LLM]
+                                 |           ^
+                                 |           | (3a. Assemble Context)
+                                 +--(3. Get Data by ID)--> [PostgreSQL/Cache]
+    ```
+
+### 3.5. API 定义与错误处理
 -   **API-First**: 使用 Protobuf (`.proto` 文件) 定义所有 API 接口。
 -   **错误码**: 使用 Kratos 提供的 `errors` 包来创建和返回标准化的业务错误码。
 
-### 3.5. 依赖注入 (Dependency Injection)
+### 3.6. 依赖注入 (Dependency Injection)
 -   所有组件的初始化和依赖关系，都在 `internal/server` 和 `cmd/{project-name}/wire.go` 中通过 `wire` 工具进行管理。
 
-### 3.6. 注释与文档规范 (Comments & Documentation)
+### 3.7. 注释与文档规范 (Comments & Documentation)
 为了生成清晰的官方文档 (`godoc`) 并为 AI 助手提供准确的上下文，所有代码注释必须遵循以下规范：
 
 -   **核心原则**: 所有公开的（首字母大写）包、类型、函数、方法和常量都**必须**有符合 `godoc` 规范的注释。
@@ -85,36 +119,7 @@
     -   必须以被注释的函数或方法名开头。
     -   第一句话应该是一个完整的句子，简明扼要地概括其功能，以句号结尾。
     -   如果需要更详细的说明、参数解释、背景信息或使用示例，可以在第一个句子后空一行，然后添加更多段落。
-
--   **示例**:
-
-    **正确的注释风格:**
-    ```go
-    // UserRepo defines the data access methods for a User.
-    // It is responsible for all database and cache operations related to users.
-    type UserRepo interface {
-        // CreateUser creates a new user in the database.
-        // It returns the ID of the newly created user or an error if the operation fails.
-        CreateUser(ctx context.Context, u *biz.User) (int64, error)
-    }
-    ```
-
-    **错误的注释风格:**
-    ```go
-    // a function to create a user
-    func CreateUser(ctx context.Context, u *biz.User) (int64, error) {
-        // ...
-    }
-    ```
-    *(错误原因：没有以函数名 `CreateUser` 开头，且首字母小写)*
-
 -   **包注释**: 每个包（每个目录）都应该有一个 `doc.go` 文件或者在其中一个 Go 文件里包含包注释，用以说明整个包的功能。
-
-    ```go
-    // Package data handles all data access logic for the application,
-    // including database operations and cache interactions.
-    package data
-    ```
 
 ---
 
@@ -128,8 +133,8 @@
     ```bash
     kratos new osc-yalab
     ```
-3.  **依赖环境**: 使用 Docker Compose 启动完整的依赖环境。`docker-compose up -d` 将会启动 PostgreSQL, Memcached, Kafka, Debezium (Kafka Connect) 和 Flink。
-4.  **配置**: 修改 `configs/config.yaml` 文件，配置数据库和缓存的连接信息。
+3.  **依赖环境**: 使用 Docker Compose 启动完整的依赖环境。`docker-compose up -d` 将会启动 PostgreSQL, Memcached, Kafka, Debezium (Kafka Connect), Flink, **以及新增的 Elasticsearch 和 Python AI 服务容器**。
+4.  **配置**: 修改 `configs/config.yaml` 文件，配置数据库、缓存及其他服务的连接信息。
 5.  **生成代码**:
     ```bash
     # 在项目根目录执行

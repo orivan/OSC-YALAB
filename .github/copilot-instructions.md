@@ -42,3 +42,9 @@
 
 1.  **注释与格式化**: 必须遵循 **[代码风格与注释指南](./instructions/style-guide.instructions.md)**。
 2.  **API 或依赖变更**: 修改 `.proto` 或 `wire.go` 文件后，必须提示用户运行 `go generate ./...`。详细说明见 **[开发工作流命令](./instructions/workflow.instructions.md)**。
+
+## 5. 前端开发规范
+
+当开发任务涉及前端 UI 或 3D 可视化时，你必须遵循以下规范：
+- **前端技术栈与原则**: 所有前端相关的开发，必须遵循 **[前端开发规范](./instructions/frontend.instructions.md)**。
+

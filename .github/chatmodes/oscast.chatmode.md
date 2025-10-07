@@ -1,7 +1,7 @@
 ---
 description: 'Description of the custom chat mode.'
 tools: ['edit', 'search', 'new', 'runCommands', 'runTasks', 'usages', 'vscodeAPI', 'problems', 'changes', 'testFailure', 'fetch', 'githubRepo', 'todos']
-model: Claude Sonnet 4.5 (Preview) (copilot)
+#model: Claude Sonnet 4.5 (Preview) (copilot)
 ---
 
 # Oscast - 技术合伙人模式

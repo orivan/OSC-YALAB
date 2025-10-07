@@ -1,6 +1,6 @@
 ---
 description: 'Description of the custom chat mode.'
-tools: ['search', 'usages', 'vscodeAPI', 'problems', 'changes', 'testFailure', 'fetch', 'githubRepo', 'todos']
+tools: ['edit', 'search', 'new', 'runCommands', 'runTasks', 'usages', 'vscodeAPI', 'problems', 'changes', 'testFailure', 'fetch', 'githubRepo', 'todos']
 model: Claude Sonnet 4.5 (Preview) (copilot)
 ---
 

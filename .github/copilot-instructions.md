@@ -1,6 +1,8 @@
 # 指导 GitHub Copilot - OSC-YALAB 项目
 
-欢迎来到 OSC-YALAB！这是一个用于学习和实验现代 Go 微服务技术栈的后端项目。
+欢**详细说明**: [查看详细的缓存模式规则](./instructions/patterns.instructions.md) | [查看详细的 RAG 架构规则](./instructions/rag-architecture.instructions.md) | [查看 AI 服务开发规范](./instructions/ai-service.instructions.md)
+
+## 3. 代码风格与注释规范【**强制性规则**】B！这是一个用于学习和实验现代 Go 微服务技术栈的后端项目。
 
 **核心目标**: 通过最简单、最直接的实现，来验证和学习一套现代化的、融合了数据处理与AI能力的后端技术栈。代码的清晰度和对设计模式的典型诠释，优先于复杂的业务逻辑。
 
@@ -39,7 +41,7 @@
 
 **详细说明**: [查看详细的缓存模式规则](./instructions/patterns.instructions.md) | [查看详细的 RAG 架构规则](./instructions/rag-architecture.instructions.md) | [查看 AI 服务开发规范](./instructions/ai-service.instructions.md)
 
-## 2. 核心架构原则：缓存模式【**最高优先级规则**】
+## 3. 核心架构原则：缓存模式【**最高优先级规则**】
 
 这是本项目最重要的规则。在修改任何数据写入逻辑（尤其是在 `internal/data` 层）时，你**必须**首先判断它属于哪种缓存模式，并严格遵守其规则。
 
@@ -48,7 +50,7 @@
 
 **详细说明**: [查看详细的缓存模式规则](./instructions/patterns.instructions.md)
 
-## 3. 代码风格与注释规范【**强制性规则**】
+## 4. 代码风格与注释规范【**强制性规则**】
 
 你生成的所有 Go 代码都必须符合以下标准：
 
@@ -57,7 +59,7 @@
 
 **详细说明**: [查看详细的代码风格指南](./instructions/style-guide.instructions.md)
 
-## 4. 开发工作流【**必须遵守的流程**】
+## 5. 开发工作流【**必须遵守的流程**】
 
 在执行特定任务时，你必须遵守以下工作流程：
 

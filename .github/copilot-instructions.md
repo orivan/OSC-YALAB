@@ -1,8 +1,6 @@
 # 指导 GitHub Copilot - OSC-YALAB 项目
 
-欢**详细说明**: [查看详细的缓存模式规则](./instructions/patterns.instructions.md) | [查看详细的 RAG 架构规则](./instructions/rag-architecture.instructions.md) | [查看 AI 服务开发规范](./instructions/ai-service.instructions.md)
-
-## 3. 代码风格与注释规范【**强制性规则**】B！这是一个用于学习和实验现代 Go 微服务技术栈的后端项目。
+这是一个用于学习和实验现代 Go 微服务技术栈的后端项目。
 
 **核心目标**: 通过最简单、最直接的实现，来验证和学习一套现代化的、融合了数据处理与AI能力的后端技术栈。代码的清晰度和对设计模式的典型诠释，优先于复杂的业务逻辑。
 
@@ -12,57 +10,35 @@
 
 本项目严格遵循以下技术选型。你生成的所有代码都必须基于此技术栈：
 
-- **微服务框架**: **Kratos (v2)**，用于构建 gRPC 和 HTTP 服务。
-- **数据库与 ORM**: **PostgreSQL** 与 **GORM**。
-- **缓存**: 使用 `gocache/v3` 作为统一抽象。
-  - **L1 本地缓存**: Ristretto
-  - **L2 分布式缓存**: Memcached
+- **微服务框架**: **Kratos (v2)**
+- **数据库与 ORM**: **PostgreSQL** 与 **GORM**
+- **缓存**: `gocache/v3` (L1: Ristretto, L2: Memcached)
 - **异步架构**:
-  - **消息队列**: Apache Kafka (`segmentio/kafka-go` 客户端)
-  - **CDC**: Debezium，用于捕获 PostgreSQL 的数据变更。
-  - **流处理**: Apache Flink，用于处理来自 Debezium 的事件。
+  - **消息队列**: Apache Kafka (`segmentio/kafka-go`)
+  - **CDC**: Debezium
+  - **流处理**: Apache Flink
 - **AI 与搜索**:
-  - **搜索引擎**: **Elasticsearch**，用于全文搜索和向量检索
-  - **AI 服务运行时**: **Python >= 3.10**，用于运行 AI 模型和 RAG 逻辑
-  - **向量化模型**: **Qwen-Embedding-0.6B**，将文本转换为向量，用于相似度搜索
-  - **大语言模型**: **Qwen2.5-7B-Instruct**，根据检索到的上下文生成最终答案
-- **依赖注入**: 使用 `google/wire` 在 `cmd/{project-name}/wire.go` 中管理依赖。
-- **API 定义**: 所有 API 均使用 Protobuf (`.proto` 文件) 进行定义。
+  - **搜索引擎**: **Elasticsearch**
+  - **AI 服务运行时**: **Python >= 3.10**
+  - **向量化模型**: **Qwen-Embedding-0.6B**
+  - **大语言模型**: **Qwen2.5-7B-Instruct**
+- **依赖注入**: `google/wire`
+- **API 定义**: Protobuf
 
-## 2. 核心架构原则：缓存模式与 RAG 架构【**最高优先级规则**】
+## 2. 核心架构原则【最高优先级】
 
-这是本项目最重要的规则。在修改任何数据写入逻辑（尤其是在 `internal/data` 层）时，你**必须**首先判断它属于哪种缓存模式，并严格遵守其规则。
+在修改任何数据读写逻辑时，你**必须**首先识别并遵循项目定义的三大核心架构模式。
 
-- **模式一：同步旁路缓存**：应用代码中包含明确的缓存失效逻辑 (`gocache.Delete`)。你的任务是**维持"先写库，再删缓存"**的顺序。
-- **模式二：异步缓存失效**：应用代码中**只有数据库操作**。你的任务是**严禁在应用代码中添加任何缓存失效逻辑**。
-- **模式三：RAG 数据流架构**：整合搜索与 AI 生成能力的完整数据管道。
-  - **数据写入**: Go 微服务通过 Kafka 消费 Flink 富化的数据，进行向量化处理后写入 Elasticsearch
-  - **数据读取**: Go 服务调用 Python AI 服务进行向量检索和答案生成
+**详细规则**: **[查看核心架构模式详解](./instructions/architecture.instructions.md)**
 
-**详细说明**: [查看详细的缓存模式规则](./instructions/patterns.instructions.md) | [查看详细的 RAG 架构规则](./instructions/rag-architecture.instructions.md) | [查看 AI 服务开发规范](./instructions/ai-service.instructions.md)
+## 3. AI 与错误处理规范
 
-## 3. 核心架构原则：缓存模式【**最高优先级规则**】
+- **AI 服务**: 所有与 Python AI 服务相关的开发，必须遵循 **[AI 服务开发规范](./instructions/ai-service.instructions.md)**。
+- **错误处理**: 所有错误处理、重试、降级逻辑，必须遵循 **[错误处理规范](./instructions/error-handling.instructions.md)**。
 
-这是本项目最重要的规则。在修改任何数据写入逻辑（尤其是在 `internal/data` 层）时，你**必须**首先判断它属于哪种缓存模式，并严格遵守其规则。
-
-- **模式一：同步旁路缓存**：应用代码中包含明确的缓存失效逻辑 (`gocache.Delete`)。你的任务是**维持“先写库，再删缓存”**的顺序。
-- **模式二：异步缓存失效**：应用代码中**只有数据库操作**。你的任务是**严禁在应用代码中添加任何缓存失效逻辑**。
-
-**详细说明**: [查看详细的缓存模式规则](./instructions/patterns.instructions.md)
-
-## 4. 代码风格与注释规范【**强制性规则**】
+## 4. 代码风格与注释规范【强制性规则】
 
 你生成的所有 Go 代码都必须符合以下标准：
 
-1.  **注释**: 所有公开的成员（包、类型、函数、方法）**必须**有符合 `godoc` 规范的注释。注释必须以被注释的成员名开头。
-2.  **格式化**: 所有代码在最终生成时，**必须**是经过 `goimports` 格式化后的结果。
-
-**详细说明**: [查看详细的代码风格指南](./instructions/style-guide.instructions.md)
-
-## 5. 开发工作流【**必须遵守的流程**】
-
-在执行特定任务时，你必须遵守以下工作流程：
-
-- **API 或依赖变更**: 当你修改了任何 `.proto` 文件或 `wire.go` 文件后，你必须提示用户需要在项目根目录下运行 `go generate ./...` 命令。
-
-**详细说明**: [查看详细的开发工作流命令](./instructions/workflow.instructions.md)
+1.  **注释与格式化**: 必须遵循 **[代码风格与注释指南](./instructions/style-guide.instructions.md)**。
+2.  **API 或依赖变更**: 修改 `.proto` 或 `wire.go` 文件后，必须提示用户运行 `go generate ./...`。详细说明见 **[开发工作流命令](./instructions/workflow.instructions.md)**。
